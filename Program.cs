@@ -6,11 +6,20 @@ namespace i2c
     {
         static void Main(string[] argv)
         {
+            Action<ProximtyEventArgs> updater = (args) =>
+            {
+                OutputValue(args.Proximity, "Proximity Reading");
+                //OutputValue(args.RawValue, "Proximity Raw Value");
+            };
+
+            Action<string> logger = (msg) => { }; /*= Console.WriteLine*/;
+
             try
             {
                 Console.WriteLine("Starting Communication with VCNL4000");
-                var vcnl4000 = new VCNL4000("1", 100);
-                vcnl4000.ProximityReading += sensor_ProximityReading;
+                var vcnl4000 = new VCNL4000("1", 100, updater, logger);
+                
+                //vcnl4000.ProximityReading += sensor_ProximityReading;
                 var productId = vcnl4000.ProductID;
                 OutputValue(productId, "Product ID");
                 vcnl4000.Start();
@@ -54,13 +63,7 @@ namespace i2c
             var _sender = (ADS1115)sender;
             OutputValue(e.Data, "Conversion Reading");
         }
-        static void sensor_ProximityReading(object sender, ProximtyEventArgs e)
-        {
-            var sensor = (VCNL4000)sender;
-            OutputValue(e.Proximity, "Proximity Reading");
-            OutputValue(e.RawValue, "Proximity Raw Value");
-        }
-        private static void OutputValue(int response, string message) 
+    private static void OutputValue(int response, string message) 
         {
             Console.WriteLine(message  + " Response: {0} (0x{1})", response, response.ToString("X"));
         }
