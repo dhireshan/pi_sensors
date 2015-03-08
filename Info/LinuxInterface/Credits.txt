@@ -1,0 +1,9 @@
+Original Authors of i2ctools:
+
+Mark D. Studebaker <mdsxyz123@yahoo.com>
+Jean Delvare <khali@linux-fr.org>
+
+
+Frodo Looijaard <frodol@dds.nl>
+
+Code borrowed by Ian Robertson from i2c-tools-3.1.0 and shaped for use as a shared object with mono via a DLL import.
