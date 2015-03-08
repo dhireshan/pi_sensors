@@ -1,53 +1,56 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 
 namespace i2c
 {
-    internal class VCNL4000 : RPi.I2C.Net.i2c
+    // ReSharper disable once InconsistentNaming
+    internal class VCNL4000 : I2C<VCNL4000_Constants>
     {
-        public event EventHandler<ProximtyEventArgs> ProximityReading;
+        private readonly Action<ProximtyEventArgs> _updateCaller;
 
         // ReSharper disable once InconsistentNaming
-        public VCNL4000(string busid, int irCurrent_mA)
+        public VCNL4000(string busid, int irCurrent_mA, Action<ProximtyEventArgs> updateCaller, Action<string> logger) : base(logger)
         {
+            _updateCaller = updateCaller;
             Busid = busid;
-            Constants = new Dictionary<string, int> 
-            { 
-                { "VCNL4000_ADDRESS", 0x13 }, 
-                { "VCNL4000_COMMAND", 0x80 },
-                { "VCNL4000_PRODUCTID", 0x81},
-                { "VCNL4000_IRLED", 0x83},
-                { "VCNL4000_AMBIENTPARAMETER", 0x84},
-                { "VCNL4000_AMBIENTDATA", 0x85},
-                { "VCNL4000_PROXIMITYDATA_1", 0x87},
-                { "VCNL4000_PROXIMITYDATA_2", 0x88},
-                { "VCNL4000_SIGNALFREQ", 0x89},
-                { "VCNL4000_PROXINITYADJUST", 0x8A},
-                { "VCNL4000_3M125", 0},
-                { "VCNL4000_1M5625", 1},
-                { "VCNL4000_781K25", 2},
-                { "VCNL4000_390K625", 3},
-                { "VCNL4000_MEASUREAMBIENT", 0x10},
-                { "VCNL4000_MEASUREPROXIMITY", 0x08},
-                { "VCNL4000_AMBIENTREADY", 0x40},
-                { "VCNL4000_PROXIMITYREADY", 0x20},
-                { "dx" , 5250 },
-                { "dy", 2370 }
+            Constants = new Dictionary<VCNL4000_Constants, int> 
+            {
+                { VCNL4000_Constants.VCNL4000_ADDRESS, 0x13 },
+                { VCNL4000_Constants.VCNL4000_COMMAND, 0x80 },
+                { VCNL4000_Constants.VCNL4000_PRODUCTID, 0x81},
+                { VCNL4000_Constants.VCNL4000_IRLED, 0x83},
+                { VCNL4000_Constants.VCNL4000_AMBIENTPARAMETER, 0x84},
+                { VCNL4000_Constants.VCNL4000_AMBIENTDATA, 0x85},
+                { VCNL4000_Constants.VCNL4000_PROXIMITYDATA_1, 0x87},
+                { VCNL4000_Constants.VCNL4000_PROXIMITYDATA_2, 0x88},
+                { VCNL4000_Constants.VCNL4000_SIGNALFREQ, 0x89},
+                { VCNL4000_Constants.VCNL4000_PROXINITYADJUST, 0x8A},
+                { VCNL4000_Constants.VCNL4000_3M125, 0},
+                { VCNL4000_Constants.VCNL4000_1M5625, 1},
+                { VCNL4000_Constants.VCNL4000_781K25, 2},
+                { VCNL4000_Constants.VCNL4000_390K625, 3},
+                { VCNL4000_Constants.VCNL4000_MEASUREAMBIENT, 0x10},
+                { VCNL4000_Constants.VCNL4000_MEASUREPROXIMITY, 0x08},
+                { VCNL4000_Constants.VCNL4000_AMBIENTREADY, 0x40},
+                { VCNL4000_Constants.VCNL4000_PROXIMITYREADY, 0x20},
+                { VCNL4000_Constants.dx , 5250 },
+                { VCNL4000_Constants.dy, 2370 }
             };
 
             var irled = Set8(
                 Busid,
-                GetConstantAsString("VCNL4000_ADDRESS"),
-                GetConstantAsString("VCNL4000_IRLED"),
-                irCurrent_mA.ToString(),
+                GetConstantAsString(VCNL4000_Constants.VCNL4000_ADDRESS),
+                GetConstantAsString(VCNL4000_Constants.VCNL4000_IRLED),
+                irCurrent_mA.ToString(CultureInfo.InvariantCulture),
                 0);
         }
 
         public UInt16 ProductID { 
             get
             { 
-                return GetValue8("VCNL4000_ADDRESS", "VCNL4000_PRODUCTID"); 
+                return GetValue8(VCNL4000_Constants.VCNL4000_ADDRESS, VCNL4000_Constants.VCNL4000_PRODUCTID); 
             } 
         }
 
@@ -57,19 +60,20 @@ namespace i2c
         private Tuple<decimal, int> Proximity { 
             get
             {
-                var command = GetValue8("VCNL4000_ADDRESS", "VCNL4000_COMMAND");
+                var command = GetValue8(VCNL4000_Constants.VCNL4000_ADDRESS, VCNL4000_Constants.VCNL4000_COMMAND);
                 Set8(
-                    Busid, 
-                    GetConstantAsString("VCNL4000_ADDRESS"), 
-                    GetConstantAsString("VCNL4000_COMMAND"),
-                    (command | GetConstantAsByte("VCNL4000_MEASUREPROXIMITY")).ToString(),
+                    Busid,
+                    GetConstantAsString(VCNL4000_Constants.VCNL4000_ADDRESS),
+                    GetConstantAsString(VCNL4000_Constants.VCNL4000_COMMAND),
+                    (command | GetConstantAsByte(VCNL4000_Constants.VCNL4000_MEASUREPROXIMITY)).ToString(CultureInfo.InvariantCulture),
                     0);
 
                 while (!ProximityReady) { /*wait until proximity data ready*/ }
 
-                var data = (UInt16)(GetValue8("VCNL4000_ADDRESS", "VCNL4000_PROXIMITYDATA_1") << 8);
-                data |= GetValue8("VCNL4000_ADDRESS", "VCNL4000_PROXIMITYDATA_2");
+                var data = (UInt16)(GetValue8(VCNL4000_Constants.VCNL4000_ADDRESS, VCNL4000_Constants.VCNL4000_PROXIMITYDATA_1) << 8);
+                data |= GetValue8(VCNL4000_Constants.VCNL4000_ADDRESS, VCNL4000_Constants.VCNL4000_PROXIMITYDATA_2);
 
+                Thread.Sleep(1000);
                 var distance = GetDistance(data);
                 return new Tuple<decimal,int>(distance, data);
             } 
@@ -77,12 +81,12 @@ namespace i2c
         private static decimal GetDistance(UInt16 data)
         {
             // ReSharper disable once InconsistentNaming
-            var prox_mm = Convert.ToDecimal(GetConstantAsByte("dx")) / (Convert.ToDecimal(data) - Convert.ToDecimal(GetConstantAsByte("dy")));
+            var prox_mm = Convert.ToDecimal(GetConstantAsByte(VCNL4000_Constants.dx)) / (Convert.ToDecimal(data) - Convert.ToDecimal(GetConstantAsByte(VCNL4000_Constants.dy)));
             return prox_mm;
         }
         private char[] ReadCommandRegister()
         {
-            var s = Convert.ToString(GetValue8("VCNL4000_ADDRESS", "VCNL4000_COMMAND"), 2);
+            var s = Convert.ToString(GetValue8(VCNL4000_Constants.VCNL4000_ADDRESS, VCNL4000_Constants.VCNL4000_COMMAND), 2);
             var bits = s.PadLeft(8, '0').ToCharArray();
             return bits;
         }
@@ -143,7 +147,7 @@ namespace i2c
             while (DoWork)
             {
                 var Event = new ProximtyEventArgs { Proximity = Proximity.Item1, RawValue = Proximity.Item2 };
-                ProximityReading(this, Event);
+                _updateCaller(Event);
             }
  
         }

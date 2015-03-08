@@ -14,7 +14,7 @@ namespace i2c
     {
         public event EventHandler<SingleEndedConversionEventArgs> SingleEndedConversionReading;
         public event EventHandler<ConverterMessageEventArgs> Message;
-        public ADS1115(string busid, uint i2CAdd = 0x48) : base(busid, i2CAdd)
+        public ADS1115(Action<string> logger, string busid, uint i2CAdd = 0x48) : base(busid, i2CAdd, logger)
         {
             Console.WriteLine("Constructor. BusAddress: {0} DeviceAddress {1}", busid, GetAsHexString(i2CAdd));
             ConversionDelay = GetConstantAsByte("ADS1115_CONVERSIONDELAY");

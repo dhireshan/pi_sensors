@@ -10,9 +10,9 @@ using System.Collections.Generic;
 namespace i2c
 {
     // ReSharper disable once InconsistentNaming
-    internal abstract class ADS1115Base : RPi.I2C.Net.i2c
+    internal abstract class ADS1115Base : I2C<string>
     {
-        public ADS1115Base(string busid, uint i2CAdd)
+        public ADS1115Base(string busid, uint i2CAdd, Action<string> logger) : base(logger)
         {
             Console.WriteLine("Setting up. BusID: {0}, DeviceAddress: {1}", busid, GetAsHexString(i2CAdd));
             I2CAddress = i2CAdd;
